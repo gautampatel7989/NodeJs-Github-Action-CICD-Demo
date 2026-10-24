@@ -62,9 +62,9 @@ jobs:
       - name: Print failure message
         if: failure()
         run: echo "A previous step failed. Please check the logs."
-        
+
   deploy-dev-env:
-    name: run-test-build
+    name: deploy-dev-env
     runs-on: ubuntu-latest
 
     steps:
