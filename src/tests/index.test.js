@@ -20,7 +20,7 @@ describe("Node.js Express API", () => {
     it("should return the healthy status", async () => {
       const response = await request(app).get("/health");
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(200);
       expect(response.body).toEqual({
         success: true,
         status: "UP",
