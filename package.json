@@ -1,0 +1,47 @@
+{
+  "name": "nodejs-github-action-cicd-demo",
+  "version": "1.0.0",
+  "description": "Node.js GitHub Actions CI/CD Demo =================================",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --coverage",
+    "lint": "eslint .",
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "build": "node --check server.js && node --check src/index.js && node --check src/routes/index.routes.js"
+    
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gautampatel7989/NodeJs-Github-Action-CICD-Demo.git"
+  },
+  "keywords": [
+   "nodejs",
+    "express",
+    "jest",
+    "supertest",
+    "eslint",
+    "github-actions",
+    "cicd"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/gautampatel7989/NodeJs-Github-Action-CICD-Demo/issues"
+  },
+  "homepage": "https://github.com/gautampatel7989/NodeJs-Github-Action-CICD-Demo#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "morgan": "^1.12.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "jest": "^30.5.2",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.3.1"
+  }
+}
