@@ -2,24 +2,10 @@
 name: Node.js Production CI
 
 on:
-  push:
-    branches:
-      - main
-      - "feature/**"
-      - "dependabot/**"
-
-  pull_request:
-    branches:
-      - main
-
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
-
-concurrency:
-  group: node-ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   ci:
@@ -31,9 +17,6 @@ jobs:
       fail-fast: false
       matrix:
         node-version: [22, 24]
-
-    env:
-      APP_ENV: ${{ vars.APP_ENV }}
 
     steps:
       - name: Checkout source code
@@ -66,8 +49,3 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 7
-
-      - name: Verify configuration
-        run: |
-          echo "Environment: ${APP_ENV:-not-configured}"
-          echo "Configuration loaded"

@@ -2,28 +2,38 @@
 name: Node.js CI/CD
 
 on:
-  workflow_run:
-    workflows:
-      - Node.js Production CI
-    types:
-      - completed
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "dependabot/**"
+
+  pull_request:
     branches:
       - main
 
+  workflow_dispatch:
+
 permissions:
-  actions: read
   contents: read
 
 concurrency:
-  group: node-cd-${{ github.event.workflow_run.head_branch }}
-  cancel-in-progress: false
+  group: node-cicd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  # 1. Call reusable CI workflow
+  ci:
+    name: Run CI
+    uses: ./.github/workflows/ci.yml
+
+  # 2. Deploy to Development
   deploy-dev-env:
     name: Deploy to Development
+    needs: ci
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main'
+      github.event_name != 'pull_request' &&
+      github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -31,31 +41,30 @@ jobs:
       name: development
 
     steps:
-      - name: Download validated build artifact
+      - name: Download CI build artifact
         uses: actions/download-artifact@v7
         with:
           name: node-api-build-node-22
           path: dist
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Verify artifact
         run: |
           test -d dist
           test "$(find dist -type f | wc -l)" -gt 0
-          echo "Development artifact verified"
+          echo "Build artifact verified"
 
       - name: Deploy to Development
         run: |
           echo "Replace with actual development deployment commands"
           echo "Deployment target: development"
+
       - name: Print Environment Configuration
-        env: 
-            APP_ENV: ${{ vars.APP_ENV }}
+        env:
+          APP_ENV: ${{ vars.APP_ENV }}
         run: |
           echo "APP_ENV: $APP_ENV"
 
-
+  # 3. Deploy to Staging
   deploy-staging-env:
     name: Deploy to Staging
     needs: deploy-dev-env
@@ -66,13 +75,11 @@ jobs:
       name: staging
 
     steps:
-      - name: Download validated build artifact
+      - name: Download CI build artifact
         uses: actions/download-artifact@v7
         with:
           name: node-api-build-node-22
           path: dist
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Deploy to Staging
         run: |
@@ -82,12 +89,14 @@ jobs:
       - name: Staging smoke test
         run: |
           echo "Replace with actual staging health-check command"
+
       - name: Print Environment Configuration
-        env: 
-            APP_ENV: ${{ vars.APP_ENV }}
+        env:
+          APP_ENV: ${{ vars.APP_ENV }}
         run: |
           echo "APP_ENV: $APP_ENV"
 
+  # 4. Deploy to Production
   deploy-production-env:
     name: Deploy to Production
     needs: deploy-staging-env
@@ -98,13 +107,11 @@ jobs:
       name: production
 
     steps:
-      - name: Download validated build artifact
+      - name: Download CI build artifact
         uses: actions/download-artifact@v7
         with:
           name: node-api-build-node-22
           path: dist
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Deploy to Production
         run: |
@@ -114,8 +121,9 @@ jobs:
       - name: Production smoke test
         run: |
           echo "Replace with actual production health-check command"
+
       - name: Print Environment Configuration
-        env: 
-            APP_ENV: ${{ vars.APP_ENV }}
+        env:
+          APP_ENV: ${{ vars.APP_ENV }}
         run: |
           echo "APP_ENV: $APP_ENV"
