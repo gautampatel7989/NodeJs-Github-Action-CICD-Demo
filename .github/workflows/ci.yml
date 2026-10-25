@@ -1,57 +1,73 @@
+
 name: Node.js Production CI
-on: 
-    push:
-        branches:
-            - main
-            - "feature/**"
-            - "dependabot/**"
-    pull_request:
-        branches: 
-            - main
-    workflow_dispatch: 
-permissions: 
-    contents: read
-concurrency: 
-    group: node-ci-${{github.workflow}}-${{github.ref}}
-    cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "dependabot/**"
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: node-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-    ci:
-        name: CI - Node.js ${{matrix.node-version}}
-        runs-on: ubuntu-latest
-        timeout-minutes: 15
-        strategy:
-            fail-fast: false
-            matrix:
-                node-version: [22,24]
-        steps:
-            # 1. Checkout repository
-            - name: Checkout source code
-              uses: actions/checkout@v6
-            # 2. Setup Node.js and npm cache
-            - name: Setup Node.js
-              uses: actions/setup-node@v7
-              with:
-                  node-version: ${{matrix.node-version}}
-                  cache: npm
-                  package-manager-cache: false
-            # 3. Install exact locked dependencies
-            - name: Install dependencies
-              run: npm ci
-            # 4. Validate code style
-            - name: Run ESLint
-              run: npm run lint
-            # 5. Run automated tests
-            - name: Run tests
-              run: npm test
-            # 6. Build application
-            - name: Build application
-              run: npm run build
-            # 7. Upload build output
-            - name: Upload build artifact
-              uses: actions/upload-artifact@v7
-              with:
-                name: node-api-build-node-${{ matrix.node-version }}
-                path: dist/
-                if-no-files-found: error
-                retention-days: 7
-            
+  ci:
+    name: CI - Node.js ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24]
+
+    env:
+      APP_ENV: ${{ vars.APP_ENV }}
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build application
+        run: npm run build
+
+      - name: Upload build artifact
+        if: matrix.node-version == 22
+        uses: actions/upload-artifact@v7
+        with:
+          name: node-api-build-node-22
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Verify configuration
+        run: |
+          echo "Environment: ${APP_ENV:-not-configured}"
+          echo "Configuration loaded"
