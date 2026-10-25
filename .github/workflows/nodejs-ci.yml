@@ -1,36 +1,129 @@
+
 name: Node.js CI/CD
 
-on: 
-    push:
-        branches: [ "main" ]
-    pull_request:
-        branches: [ "main" ]
-    workflow_dispatch:
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "dependabot/**"
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
 
 permissions:
-    contents: read
+  contents: read
+
+concurrency:
+  group: node-cicd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-    lint-and-test:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-            
-            - name: Set up Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 22
-                  cache: npm
+  # 1. Call reusable CI workflow
+  ci:
+    name: Run CI
+    uses: ./.github/workflows/ci.yml
 
-            - name: Install dependencies
-              run: npm ci
-            
-            - name: Run ESLint
-              run: npm run lint
-            
-            - name: Run Tests
-              run: npm test
-            
-            - name: Build application
-              run: npm run build
+  # 2. Deploy to Development
+  deploy-dev-env:
+    name: Deploy to Development
+    needs: ci
+    if: >-
+      github.event_name != 'pull_request' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    environment:
+      name: development
+
+    steps:
+      - name: Download CI build artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: node-api-build-node-22
+          path: dist
+
+      - name: Verify artifact
+        run: |
+          test -d dist
+          test "$(find dist -type f | wc -l)" -gt 0
+          echo "Build artifact verified"
+
+      - name: Deploy to Development
+        run: |
+          echo "Replace with actual development deployment commands"
+          echo "Deployment target: development"
+
+      - name: Print Environment Configuration
+        env:
+          APP_ENV: ${{ vars.APP_ENV }}
+        run: |
+          echo "APP_ENV: $APP_ENV"
+
+  # 3. Deploy to Staging
+  deploy-staging-env:
+    name: Deploy to Staging
+    needs: deploy-dev-env
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    environment:
+      name: staging
+
+    steps:
+      - name: Download CI build artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: node-api-build-node-22
+          path: dist
+
+      - name: Deploy to Staging
+        run: |
+          echo "Replace with actual staging deployment commands"
+          echo "Deployment target: staging"
+
+      - name: Staging smoke test
+        run: |
+          echo "Replace with actual staging health-check command"
+
+      - name: Print Environment Configuration
+        env:
+          APP_ENV: ${{ vars.APP_ENV }}
+        run: |
+          echo "APP_ENV: $APP_ENV"
+
+  # 4. Deploy to Production
+  deploy-production-env:
+    name: Deploy to Production
+    needs: deploy-staging-env
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    environment:
+      name: production
+
+    steps:
+      - name: Download CI build artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: node-api-build-node-22
+          path: dist
+
+      - name: Deploy to Production
+        run: |
+          echo "Replace with actual production deployment commands"
+          echo "Deployment target: production"
+
+      - name: Production smoke test
+        run: |
+          echo "Replace with actual production health-check command"
+
+      - name: Print Environment Configuration
+        env:
+          APP_ENV: ${{ vars.APP_ENV }}
+        run: |
+          echo "APP_ENV: $APP_ENV"

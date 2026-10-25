@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "build": "node --check server.js && node --check src/index.js && node --check src/routes/index.routes.js"
+    "build": "node scripts/build.js"
     
   },
   "repository": {
